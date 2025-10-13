@@ -38,40 +38,35 @@
          let geojsonLayer;
 
          // Load Vancouver boundary and constrain map
-         fetch('vancouver.geojson')
-           .then(res => res.json())
-           .then(data => {
-             const vancouverBoundary = L.geoJSON(data, {
-               style: { color:'#0078ff', weight:0.5, fill:true, fillOpacity:0.05 }
-             }).addTo(map);
-         
-             const bounds = vancouverBoundary.getBounds();
-         
-             // Optional: set min/max zoom to control how far you can zoom
-             map.setMinZoom(10);
-             map.setMaxZoom(16);
-           });
+        fetch('vancouver.geojson')
+          .then(res => res.json())
+          .then(data => {
+            geojsonLayer = L.geoJSON(data, {
+              style: { color:'#0078ff', weight:0.5, fill:true, fillOpacity:0.05 }
+            }).addTo(map);
 
-        // Toggle button
-          const toggleButton = document.getElementById('toggle-geojson');
-          let geojsonVisible = true;
-
-          toggleButton.addEventListener('click', () => {
-            if (!geojsonLayer) return; // wait until layer is loaded
-
-            if (geojsonVisible) {
-              map.removeLayer(geojsonLayer);
-              toggleButton.textContent = 'Overlay';
-              toggleButton.classList.remove('active');
-              toggleButton.classList.add('inactive');
-            } else {
-              geojsonLayer.addTo(map);
-              toggleButton.textContent = 'GeoJSON ON';
-              toggleButton.classList.remove('inactive');
-              toggleButton.classList.add('active');
-            }
-            geojsonVisible = !geojsonVisible;
+            const bounds = geojsonLayer.getBounds();
+            map.setMinZoom(10);
+            map.setMaxZoom(16);
           });
+
+        toggleButton.addEventListener('click', () => {
+          if (!geojsonLayer) return; // wait until the layer is loaded
+
+          if (geojsonVisible) {
+            map.removeLayer(geojsonLayer);
+            toggleButton.textContent = 'GeoJSON OFF';
+            toggleButton.classList.remove('active');
+            toggleButton.classList.add('inactive');
+          } else {
+            geojsonLayer.addTo(map);
+            toggleButton.textContent = 'GeoJSON ON';
+            toggleButton.classList.remove('inactive');
+            toggleButton.classList.add('active');
+          }
+          geojsonVisible = !geojsonVisible;
+        });
+
 
          // Bus markers
          let markers = [];
