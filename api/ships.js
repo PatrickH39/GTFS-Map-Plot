@@ -34,7 +34,6 @@ async function connectAISStream() {
         const r = msg.Message.PositionReport;
         const ship = {
           id: r.UserID,
-          name: r.VesselName || "Unknown",
           lat: r.Latitude,
           lon: r.Longitude,
           sog: r.Sog,

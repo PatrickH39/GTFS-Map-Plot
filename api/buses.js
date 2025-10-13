@@ -34,8 +34,6 @@ export default async function handler(req, res) {
         route: e.vehicle.trip?.routeId,
         lat: e.vehicle.position.latitude,
         lon: e.vehicle.position.longitude,
-        bearing: e.vehicle.position.bearing,
-        speed: e.vehicle.position.speed
       }));
 
     cachedData = buses;

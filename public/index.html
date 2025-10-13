@@ -16,12 +16,27 @@
    </head>
    <body>
       <div id="map"></div>
+      <button id="toggle-geojson" class="floating-btn" style="
+          position: absolute;
+          bottom: 10px;
+          right: 10px;
+          z-index: 1000;
+          background-color: white;
+          border: 1px solid #ccc;
+          padding: 8px 12px;
+          border-radius: 6px;
+          cursor: pointer;
+          font-weight: bold;
+          transition: background-color 0.2s, color 0.2s;
+      ">Map</button>
       <script>
          // Create map centered on Greater Vancouver coordinates
          const map = L.map('map', { zoomControl: false, attributionControl: false, scrollWheelZoom: false, doubleClickZoom: false, touchZoom: false, dragging: false, keyboard: false, tap: false, boxZoom: false})
            .setView([49.2200, -123.1496], 11.5);
          map.off();
          
+         let geojsonLayer;
+
          // Load Vancouver boundary and constrain map
          fetch('vancouver.geojson')
            .then(res => res.json())
@@ -36,7 +51,28 @@
              map.setMinZoom(10);
              map.setMaxZoom(16);
            });
-         
+
+        // Toggle button
+          const toggleButton = document.getElementById('toggle-geojson');
+          let geojsonVisible = true;
+
+          toggleButton.addEventListener('click', () => {
+            if (!geojsonLayer) return; // wait until layer is loaded
+
+            if (geojsonVisible) {
+              map.removeLayer(geojsonLayer);
+              toggleButton.textContent = 'Overlay';
+              toggleButton.classList.remove('active');
+              toggleButton.classList.add('inactive');
+            } else {
+              geojsonLayer.addTo(map);
+              toggleButton.textContent = 'GeoJSON ON';
+              toggleButton.classList.remove('inactive');
+              toggleButton.classList.add('active');
+            }
+            geojsonVisible = !geojsonVisible;
+          });
+
          // Bus markers
          let markers = [];
          async function loadBuses() {
