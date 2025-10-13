@@ -1,21 +1,18 @@
 import WebSocket from "ws";
 
-let ships = [];
-let socket = null;
-let lastConnect = 0;
-
 const API_KEY = process.env.AISSTREAM_API_KEY;
 
-function connectAISStream() {
-  const now = Date.now();
-  if (socket && socket.readyState === WebSocket.OPEN) return;
-  if (now - lastConnect < 5000) return; // prevent reconnect spam
-  lastConnect = now;
+let cachedShips = [];
+let lastUpdate = 0;
+let isConnecting = false;
 
-  console.log("Connecting to AISStream");
-  socket = new WebSocket("wss://stream.aisstream.io/v0/stream");
+async function connectAISStream() {
+  if (isConnecting) return; // Prevent multiple connects
+  isConnecting = true;
 
-  socket.on("open", () => {
+  const ws = new WebSocket("wss://stream.aisstream.io/v0/stream");
+
+  ws.on("open", () => {
     console.log("AISStream connected");
     const sub = {
       APIKey: API_KEY,
@@ -25,58 +22,68 @@ function connectAISStream() {
           [49.604, -122.5637],
         ],
       ],
+      FiltersShipMessageTypes: ["PositionReport"],
     };
-    socket.send(JSON.stringify(sub));
+    ws.send(JSON.stringify(sub));
   });
 
-  socket.on("message", (event) => {
+  ws.on("message", (data) => {
     try {
-      const aisMessage = JSON.parse(event.toString());
-      if (aisMessage.MessageType === "PositionReport") {
-        const p = aisMessage.Message.PositionReport;
-
-        const shipData = {
-          id: p.UserID,
-          lat: p.Latitude,
-          lon: p.Longitude,
-          heading: p.TrueHeading,
-          name: p.VesselName || "Unknown",
+      const msg = JSON.parse(data);
+      if (msg?.MessageType === "PositionReport") {
+        const r = msg.Message.PositionReport;
+        const ship = {
+          id: r.UserID,
+          name: r.VesselName || "Unknown",
+          lat: r.Latitude,
+          lon: r.Longitude,
+          sog: r.Sog,
+          cog: r.Cog,
           timestamp: Date.now(),
         };
 
-        const existing = ships.find((s) => s.id === p.UserID);
-        if (existing) Object.assign(existing, shipData);
-        else ships.push(shipData);
+        // Upsert into cache
+        const idx = cachedShips.findIndex((s) => s.id === ship.id);
+        if (idx >= 0) cachedShips[idx] = ship;
+        else cachedShips.push(ship);
       }
-    } catch (err) {
-      console.error("AIS parse error:", err);
+    } catch (e) {
+      console.error("Parse error:", e);
     }
   });
 
-  socket.on("close", () => {
-    console.log("AISStream closed. Reconnecting...");
-    socket = null;
-    setTimeout(connectAISStream, 5000);
+  ws.on("close", () => {
+    console.log("AISStream closed");
+    isConnecting = false;
   });
 
-  socket.on("error", (err) => {
+  ws.on("error", (err) => {
     console.error("AISStream error:", err);
-    socket?.close();
+    ws.close();
   });
+
+  // Auto close after 10 s (snapshot)
+  setTimeout(() => {
+    console.log("Closing AIS snapshot connection");
+    ws.close();
+    isConnecting = false;
+    lastUpdate = Date.now();
+  }, 15000);
 }
 
-// periodically prune stale ships
-setInterval(() => {
-  const cutoff = Date.now() - 10 * 60 * 1000; // 10 minutes
-  const before = ships.length;
-  ships = ships.filter((s) => s.timestamp > cutoff);
-  const after = ships.length;
-  if (before !== after) console.log(`Pruned ${before - after} old ships`);
-}, 60 * 1000);
-
-connectAISStream();
-
 export default async function handler(req, res) {
-  connectAISStream(); // ensure it’s running
-  res.status(200).json(ships);
+  // Refresh every 60 s
+  const now = Date.now();
+  const cacheAge = (now - lastUpdate) / 1000;
+
+  if (cacheAge > 60 && !isConnecting) {
+    console.log("Refreshing AIS data…");
+    connectAISStream();
+  }
+
+  // Return cached snapshot
+  res.status(200).json({
+    updated: new Date(lastUpdate).toISOString(),
+    ships: cachedShips,
+  });
 }
