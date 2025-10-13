@@ -68,15 +68,15 @@ async function connectAISStream() {
     ws.close();
     isConnecting = false;
     lastUpdate = Date.now();
-  }, 15000);
+  }, 90000);
 }
 
 export default async function handler(req, res) {
-  // Refresh every 60 s
+  // Refresh every 3 minutes
   const now = Date.now();
   const cacheAge = (now - lastUpdate) / 1000;
 
-  if (cacheAge > 60 && !isConnecting) {
+  if (cacheAge > 180 && !isConnecting) {
     console.log("Refreshing AIS data…");
     connectAISStream();
   }
