@@ -94,8 +94,11 @@
          async function loadShips() {
            try {
              const res = await fetch('/api/ships');
-             const ships = await res.json();
-         
+             const data = await res.json();
+
+             // Ship array
+             const ships = data.ships || [];
+
              // Remove old markers
              shipMarkers.forEach(m => map.removeLayer(m));
              shipMarkers = [];
