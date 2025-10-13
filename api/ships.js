@@ -18,7 +18,7 @@ function connectAISStream() {
   socket.on("open", () => {
     console.log("AISStream connected");
     const sub = {
-      APIkey: API_KEY,
+      APIKey: API_KEY,
       BoundingBoxes: [
         [
           [48.6841, -124.5104],
