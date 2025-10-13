@@ -63,9 +63,37 @@
            }
          }
          
+         // Bus markers
+         let planeMarkers = [];
+         async function loadPlanes() {
+           try {
+             const res = await fetch('/api/planes');
+             const planes = await res.json();
+         
+             // Remove old markers
+             planeMarkers.forEach(m => map.removeLayer(m));
+             planeMarkers = [];
+         
+             // Add new bus markers
+             planes.forEach(plane => {
+               const marker = L.circleMarker([plane.lat, plane.lon], {
+                 radius: 8,
+                 color: null,
+                 fillColor: 'orange',
+                 fillOpacity: 0.15
+               }).addTo(map);
+               planeMarkers.push(marker);
+             });
+           } catch(err) {
+             console.error('Failed to load planes', err);
+           }
+         }
+
          // Initial load + refresh every 15s
          loadBuses();
+         loadPlanes();
          setInterval(loadBuses, 15000);
+         setInterval(loadPlanes, 15000);
       </script>
    </body>
 </html>
