@@ -63,7 +63,7 @@
            }
          }
          
-         // Plane markers
+         // Bus markers
          let planeMarkers = [];
          async function loadPlanes() {
            try {
@@ -74,7 +74,7 @@
              planeMarkers.forEach(m => map.removeLayer(m));
              planeMarkers = [];
          
-             // Add new plane markers
+             // Add new bus markers
              planes.forEach(plane => {
                const marker = L.circleMarker([plane.lat, plane.lon], {
                  radius: 8,
@@ -89,39 +89,11 @@
            }
          }
 
-         // Ship markers
-         let shipMarkers = [];
-         async function loadShips() {
-           try {
-             const res = await fetch('/api/ships');
-             const ships = await res.json();
-         
-             // Remove old markers
-             shipMarkers.forEach(m => map.removeLayer(m));
-             shipMarkers = [];
-         
-             // Add new bus markers
-             ships.forEach(ship => {
-               const marker = L.circleMarker([ship.lat, ship.lon], {
-                 radius: 8,
-                 color: null,
-                 fillColor: 'green',
-                 fillOpacity: 0.15
-               }).addTo(map);
-               shipMarkers.push(marker);
-             });
-           } catch(err) {
-             console.error('Failed to load ships', err);
-           }
-         }
-
          // Initial load + refresh every 15s
          loadBuses();
          loadPlanes();
-         loadShips();
          setInterval(loadBuses, 15000);
          setInterval(loadPlanes, 15000);
-         setInterval(loadShips, 15000);
       </script>
    </body>
 </html>

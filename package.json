@@ -4,7 +4,6 @@
   "type": "module",
   "dependencies": {
     "node-fetch": "^3.3.2",
-    "gtfs-realtime-bindings": "^1.1.1",
-    "ws": "^8.18.3"
+    "gtfs-realtime-bindings": "^1.1.1"
   }
 }

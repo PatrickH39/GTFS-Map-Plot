@@ -1,7 +1,7 @@
 import fetch from "node-fetch";
 
 const API_URL =
-  "https://opendata.adsb.fi/api/v2/lat/49.2200/lon/-123.1496/dist/30";
+  "https://opendata.adsb.fi/api/v2/lat/49.2200/lon/-123.1496/dist/50";
 
 let cachedData = null;
 let lastFetch = 0;
