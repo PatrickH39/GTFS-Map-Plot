@@ -18,8 +18,8 @@ async function connectAISStream() {
       APIKey: API_KEY,
       BoundingBoxes: [
         [
-          [48.6841, -124.5104],
-          [49.604, -122.5637],
+          [48.876613, -123.781860],
+          [49.509186, -122.522278],
         ],
       ],
       FiltersShipMessageTypes: ["PositionReport"],
@@ -61,7 +61,7 @@ async function connectAISStream() {
     ws.close();
   });
 
-  // Auto close after 10 s (snapshot)
+  // Auto close after 90s (snapshot)
   setTimeout(() => {
     console.log("Closing AIS snapshot connection");
     ws.close();

@@ -2,7 +2,7 @@ import fetch from "node-fetch";
 import GtfsRealtimeBindings from "gtfs-realtime-bindings";
 
 const API_KEY = process.env.TRANSLINK_API_KEY;
-const CACHE_DURATION = 10 * 1000;
+const CACHE_DURATION = 15 * 1000;
 
 let cachedData = null;
 let lastFetchTime = 0;

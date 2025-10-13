@@ -5,7 +5,7 @@ const API_URL =
 
 let cachedData = null;
 let lastFetch = 0;
-const CACHE_DURATION = 10 * 1000; // 10 s cache
+const CACHE_DURATION = 15 * 1000; // 15 s cache
 
 export default async function handler(req, res) {
   const now = Date.now();

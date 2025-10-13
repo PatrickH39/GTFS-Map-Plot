@@ -2,7 +2,7 @@
 <html lang="en">
    <head>
       <meta charset="UTF-8">
-      <title>Vancouver Bus Map Overlay</title>
+      <title>Vancouver Transportation Map</title>
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <link
          rel="stylesheet"
@@ -11,62 +11,39 @@
       <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
       <style>
          html, body { margin:0; padding:0; height:100%; }
-         #map { position: fixed;width:100%; height:100vh;background-color: white; pointer-events: none;z-index: 0; cursor: default;}
+         #map { position: fixed;width:100%; height:100vh;background-color: white;z-index: 0;}
       </style>
    </head>
    <body>
       <div id="map"></div>
-      <button id="toggle-geojson" class="floating-btn" style="
-          position: absolute;
-          bottom: 10px;
-          right: 10px;
-          z-index: 1000;
-          background-color: white;
-          border: 1px solid #ccc;
-          padding: 8px 12px;
-          border-radius: 6px;
-          cursor: pointer;
-          font-weight: bold;
-          transition: background-color 0.2s, color 0.2s;
-      ">Map</button>
       <script>
          // Create map centered on Greater Vancouver coordinates
-         const map = L.map('map', { zoomControl: false, attributionControl: false, scrollWheelZoom: false, doubleClickZoom: false, touchZoom: false, dragging: false, keyboard: false, tap: false, boxZoom: false})
-           .setView([49.2200, -123.1496], 11.5);
-         map.off();
-         
-         let geojsonLayer;
+         const map = L.map('map', { 
+          zoomControl: false,
+          attributionControl: false,
+          scrollWheelZoom: false,
+          doubleClickZoom: false,
+          touchZoom: false,
+          dragging: false,
+          keyboard: false,
+          tap: false,
+          boxZoom: false
+         }).setView([49.2200, -123.1496], 11.5);
+
+        const busLayer = L.layerGroup().addTo(map);
+        const planeLayer = L.layerGroup().addTo(map);
+        const shipLayer = L.layerGroup().addTo(map);
 
          // Load Vancouver boundary and constrain map
-        fetch('vancouver.geojson')
-          .then(res => res.json())
-          .then(data => {
-            geojsonLayer = L.geoJSON(data, {
-              style: { color:'#0078ff', weight:0.5, fill:true, fillOpacity:0.05 }
-            }).addTo(map);
+         fetch('vancouver.geojson')
+           .then(res => res.json())
+           .then(data => {
+             const vancouverBoundary = L.geoJSON(data, {
+               style: { color:'#0078ff', weight: 0.3, fill:true, fillOpacity:0.05 }, interactive: false
+             }).addTo(map);
 
-            const bounds = geojsonLayer.getBounds();
-            map.setMinZoom(10);
-            map.setMaxZoom(16);
-          });
-
-        toggleButton.addEventListener('click', () => {
-          if (!geojsonLayer) return; // wait until the layer is loaded
-
-          if (geojsonVisible) {
-            map.removeLayer(geojsonLayer);
-            toggleButton.textContent = 'GeoJSON OFF';
-            toggleButton.classList.remove('active');
-            toggleButton.classList.add('inactive');
-          } else {
-            geojsonLayer.addTo(map);
-            toggleButton.textContent = 'GeoJSON ON';
-            toggleButton.classList.remove('inactive');
-            toggleButton.classList.add('active');
-          }
-          geojsonVisible = !geojsonVisible;
-        });
-
+             const bounds = vancouverBoundary.getBounds();
+           });
 
          // Bus markers
          let markers = [];
@@ -77,17 +54,19 @@
          
              // Remove old markers
              markers.forEach(m => map.removeLayer(m));
+             busLayer.clearLayers();
              markers = [];
          
              // Add new bus markers
              buses.forEach(bus => {
-               const marker = L.circleMarker([bus.lat, bus.lon], {
-                 radius: 8,
+               const busMarker = L.circleMarker([bus.lat, bus.lon], {
+                 radius: 6,
                  color: null,
                  fillColor: '#0078ff',
-                 fillOpacity: 0.15
-               }).addTo(map);
-               markers.push(marker);
+                 fillOpacity: 0.15,
+                 interactive: false
+               }).addTo(busLayer);
+               markers.push(busMarker);
              });
            } catch(err) {
              console.error('Failed to load buses', err);
@@ -103,59 +82,71 @@
          
              // Remove old markers
              planeMarkers.forEach(m => map.removeLayer(m));
+             planeLayer.clearLayers();
              planeMarkers = [];
          
              // Add new plane markers
              planes.forEach(plane => {
-               const marker = L.circleMarker([plane.lat, plane.lon], {
-                 radius: 8,
+               const planeMarker = L.circleMarker([plane.lat, plane.lon], {
+                 radius: 12,
                  color: null,
                  fillColor: 'orange',
-                 fillOpacity: 0.3
-               }).addTo(map);
-               planeMarkers.push(marker);
+                 fillOpacity: 0.3,
+                 interactive: false
+               }).addTo(planeLayer);
+               planeMarkers.push(planeMarker);
              });
            } catch(err) {
              console.error('Failed to load planes', err);
            }
          }
-
+         
          // Ship markers
          let shipMarkers = [];
          async function loadShips() {
            try {
              const res = await fetch('/api/ships');
              const data = await res.json();
-
+         
              // Ship array
              const ships = data.ships || [];
-
+         
              // Remove old markers
              shipMarkers.forEach(m => map.removeLayer(m));
+             shipLayer.clearLayers();
              shipMarkers = [];
          
              // Add new ship markers
              ships.forEach(ship => {
-               const marker = L.circleMarker([ship.lat, ship.lon], {
+               const shipMarker = L.circleMarker([ship.lat, ship.lon], {
                  radius: 8,
                  color: null,
                  fillColor: 'green',
-                 fillOpacity: 0.15
-               }).addTo(map);
-               shipMarkers.push(marker);
+                 fillOpacity: 0.15,
+                 interactive: false
+               }).addTo(shipLayer);
+               shipMarkers.push(shipMarker);
              });
            } catch(err) {
              console.error('Failed to load ships', err);
            }
          }
 
-         // Initial load + refresh every 15s
+        const overlays = {
+          "Land": busLayer,
+          "Air": planeLayer,
+          "Water": shipLayer
+        };
+
+        L.control.layers(null, overlays).addTo(map);
+
+         // Initial load + refresh every 10s
          loadBuses();
          loadPlanes();
          loadShips();
-         setInterval(loadBuses, 15000);
-         setInterval(loadPlanes, 15000);
-         setInterval(loadShips, 15000);
+         setInterval(loadBuses, 10000);
+         setInterval(loadPlanes, 10000);
+         setInterval(loadShips, 10000);
       </script>
    </body>
 </html>
