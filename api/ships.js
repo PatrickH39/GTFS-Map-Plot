@@ -4,12 +4,6 @@ let ships = [];
 let socket = null;
 
 const API_KEY = process.env.AISSTREAM_API_KEY;
-const BOUNDING_BOX = [
-  [
-    [48.8939, -123.7528],
-    [49.604, -122.5637],
-  ],
-];
 
 // Function to start WebSocket connection (runs once per server)
 function initAISStream() {
@@ -20,9 +14,15 @@ function initAISStream() {
   socket.on("open", () => {
     console.log("AISStream connected");
     const subscriptionMessage = {
-      APIkey: API_KEY,
-      BoundingBoxes: BOUNDING_BOX,
+      APIKey: API_KEY,
+      BoundingBoxes: [
+    [
+        [48.6841, -124.5104], // top left of Vancouver
+        [49.604, -122.5637], // bottom right near the US
+      ],
+    ],
     };
+    console.log(JSON.stringify(subscriptionMessage));
     socket.send(JSON.stringify(subscriptionMessage));
   });
 
@@ -38,7 +38,6 @@ function initAISStream() {
           id: p.UserID,
           lat: p.Latitude,
           lon: p.Longitude,
-          sog: p.Speed,
           heading: p.TrueHeading,
           name: p.VesselName || "Unknown",
           timestamp: Date.now(),
@@ -49,9 +48,6 @@ function initAISStream() {
         } else {
           ships.push(shipData);
         }
-
-        // Keep the list short
-        if (ships.length > 500) ships = ships.slice(-500);
       }
     } catch (err) {
       console.error("AIS parse error:", err);
